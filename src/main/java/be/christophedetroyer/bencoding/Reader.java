@@ -1,0 +1,251 @@
+package be.christophedetroyer.bencoding;
+
+import be.christophedetroyer.bencoding.types.BByteString;
+import be.christophedetroyer.bencoding.types.BDictionary;
+import be.christophedetroyer.bencoding.types.BInt;
+import be.christophedetroyer.bencoding.types.BList;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by christophe on 15.01.15.
+ */
+public class Reader
+{
+    private long currentByteIndex;
+    private final String filePath;
+
+    ////////////////////////////////////////////////////////////////////////////
+    //// CONSTRUCTORS //////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    public Reader(String filePath)
+    {
+        this.filePath = filePath;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //// PARSER ////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Starts reading from the beginning of the file.
+     * Keeps reading single types and adds them to the list to finally return
+     * them.
+     *
+     * @return List<Object> containing all the parsed bencoded objects.
+     */
+    public synchronized List<Object> read()
+    {
+        this.currentByteIndex = 0;
+        long fileSize = new File(filePath).length();
+
+        List<Object> dataTypes = new ArrayList<Object>();
+        while (currentByteIndex < fileSize)
+            dataTypes.add(readSingleType());
+
+        return dataTypes;
+    }
+
+    /**
+     * Tries to read in an object starting at the current byte index.
+     * If not possible throws an exception.
+     *
+     * @return Returns an Object that represents either BByteString,
+     * BDictionary, BInt or BList.
+     */
+    private Object readSingleType()
+    {
+        // Read in the byte at current position and dispatch over it.
+        byte current = Utils.readNthByteFromFile(filePath, currentByteIndex);
+        switch (current)
+        {
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+                return readByteString();
+            case 'd':
+                return readDictionary();
+            case 'i':
+                return readInteger();
+            case 'l':
+                return readList();
+        }
+        throw new Error("Parser in invalid state at byte " + currentByteIndex);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //// BENCODING READ TYPES //////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Reads in a list starting from the current byte index. Throws an error if
+     * not called on an appropriate index.
+     * A list of values is encoded as l<contents>e . The contents consist of the bencoded
+     * elements of the list, in order, concatenated. A list consisting of the string "spam"
+     * and the number 42 would be encoded as: l4:spami42ee. Note the absence of separators
+     * between elements.
+     *
+     * @return BList object.
+     */
+    private BList readList()
+    {
+        // If we got here, the current byte is an 'l'.
+        if (readCurrentByte() != 'l')
+            throw new Error("Error parsing list. Was expecting a 'l' but got " + readCurrentByte());
+        currentByteIndex++; // Skip over the 'l'
+
+        BList list = new BList();
+        while (readCurrentByte() != 'e')
+            list.add(readSingleType());
+
+        currentByteIndex++; // Skip the 'e'
+        return list;
+    }
+
+    /**
+     * Reads in a bytestring strating at the current position.
+     * Throws an error if not possible.
+     * A byte string (a sequence of bytes, not necessarily characters) is encoded as <length>:<contents>.
+     * The length is encoded in base 10, like integers, but must be non-negative (zero is allowed);
+     * the contents are just the bytes that make up the string. The string "spam" would be encoded as 4:spam.
+     * The specification does not deal with encoding of characters outside the ASCII set; to mitigate this,
+     * some BitTorrent applications explicitly communicate the encoding (most commonly UTF-8) in various
+     * non-standard ways. This is identical to how netstrings work, except that netstrings additionally
+     * append a comma suffix after the byte sequence.
+     *
+     * @return BByteString
+     */
+    private BByteString readByteString()
+    {
+        String lengthAsString = "";
+        int lengthAsInt;
+        byte[] bsData;
+
+        // Build up a string of ascii chars representing the size.
+        char current = readCurrentChar();
+        while (current >= 48 && current <= 57)
+        {
+            lengthAsString = lengthAsString + Character.toString(current);
+            currentByteIndex++;
+            current = readCurrentChar();
+        }
+        lengthAsInt = Integer.parseInt(lengthAsString);
+
+        if (readCurrentChar() != ':')
+            throw new Error("Read length of bytestring and was expecting ':' but got " + readCurrentChar());
+        currentByteIndex++; // Skip over the ':'.
+
+        // Read the actual data
+        bsData = new byte[lengthAsInt];
+        for (int i = 0; i < lengthAsInt; i++)
+        {
+            bsData[i] = readCurrentByte();
+            currentByteIndex++;
+        }
+
+        return new BByteString(bsData);
+    }
+
+    /**
+     * Reads in a dictionary. Each dictionary consists of N bytestrings mapped to any other value.
+     * Example: d3:foo3:bare == ({foo, bar})
+     * A dictionary is encoded as d<contents>e. The elements of the dictionary are encoded each key
+     * immediately followed by its value. All keys must be byte strings and must appear in
+     * lexicographical order. A dictionary that associates the values 42 and "spam" with the keys
+     * "foo" and "bar", respectively (in other words, {"bar": "spam", "foo": 42}), would be encoded as
+     * follows: d3:bar4:spam3:fooi42ee.
+     * (This might be easier to read by inserting some spaces: d 3:bar 4:spam 3:foo i42e e.)
+     *
+     * @return BDictionary representing the dictionary.
+     */
+    private BDictionary readDictionary()
+    {
+        // If we got here, the current byte is an 'i'.
+        if (readCurrentByte() != 'd')
+            throw new Error("Error parsing dictionary. Was expecting a 'd' but got " + readCurrentByte());
+        currentByteIndex++; // Skip over the 'd'
+
+        BDictionary dict = new BDictionary();
+        while (readCurrentByte() != 'e')
+        {
+            // Each dictionary *must* map BByteStrings to any other value.
+            BByteString key = (BByteString) readSingleType();
+            Object value = readSingleType();
+            dict.add(key, value);
+        }
+        currentByteIndex++; // Skip the 'e'
+
+        return dict;
+    }
+
+    /**
+     * Parses an integer in Bencode fromat.
+     * Example: 123 == i123e
+     * An integer is encoded as i<integer encoded in base ten ASCII>e.
+     * Leading zeros are not allowed (although the number zero is still represented as "0").
+     * Negative values are encoded by prefixing the number with a minus sign.
+     * The number 42 would thus be encoded as i42e, 0 as i0e, and -42 as i-42e.
+     * Negative zero is not permitted.
+     *
+     * @return BInt representing the value of the parsed integer.
+     */
+    private BInt readInteger()
+    {
+        // If we got here, the current byte is an 'i'.
+        if (readCurrentByte() != 'i')
+            throw new Error("Error parsing integer. Was expecting an 'i' but got " + readCurrentByte());
+        currentByteIndex++;// Skip the 'i'.
+
+        // Read in the integer number by number.
+        // They are represented as ASCII numbers.
+        String intString = "";
+        char current = readCurrentChar();
+        while (current >= 48 && current <= 57)
+        {
+            intString = intString + Character.toString(current);
+            currentByteIndex++;
+            current = readCurrentChar();
+        }
+
+        if (readCurrentByte() != 'e')
+            throw new Error("Error parsing integer. Was expecting 'e' at end but got " + readCurrentByte());
+
+        currentByteIndex++; // Skip past 'e'
+        return new BInt(Integer.parseInt(intString));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //// HELPERS ///////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Returns the byte in the current position of the file.
+     *
+     * @return byte
+     */
+    private byte readCurrentByte()
+    {
+        return Utils.readNthByteFromFile(filePath, currentByteIndex);
+    }
+
+    /**
+     * Same as readCurrentByte, but a char. For cleaner code.
+     *
+     * @return Current char in the byte array.
+     */
+    private char readCurrentChar()
+    {
+        return (char) readCurrentByte();
+    }
+
+
+}
