@@ -4,10 +4,10 @@ import java.util.List;
 
 public class TorrentFile
 {
-    private final int fileLength;
+    private final Long fileLength;
     private final List<String> fileDirs;
 
-    public TorrentFile(int fileLength, List<String> fileDirs)
+    public TorrentFile(Long fileLength, List<String> fileDirs)
     {
         this.fileLength = fileLength;
         this.fileDirs = fileDirs;
@@ -25,7 +25,7 @@ public class TorrentFile
     ////////////////////////////////////////////////////////////////////////////
     //// GETTERS AND SETTERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    public int getFileLength()
+    public Long getFileLength()
     {
         return fileLength;
     }

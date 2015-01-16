@@ -5,9 +5,9 @@ package be.christophedetroyer.bencoding.types;
  */
 public class BInt
 {
-    private final int value;
+    private final Long value;
 
-    public BInt(int value)
+    public BInt(Long value)
     {
         this.value = value;
     }
@@ -16,7 +16,7 @@ public class BInt
     //// GETTERS AND SETTERS ///////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
 
-    public int getValue()
+    public Long getValue()
     {
         return value;
     }
@@ -38,7 +38,7 @@ public class BInt
     @Override
     public int hashCode()
     {
-        return value;
+        return value.hashCode();
     }
 
     @Override

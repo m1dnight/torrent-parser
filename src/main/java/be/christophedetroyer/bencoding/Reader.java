@@ -4,6 +4,7 @@ import be.christophedetroyer.bencoding.types.BByteString;
 import be.christophedetroyer.bencoding.types.BDictionary;
 import be.christophedetroyer.bencoding.types.BInt;
 import be.christophedetroyer.bencoding.types.BList;
+import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -14,15 +15,15 @@ import java.util.List;
  */
 public class Reader
 {
-    private long currentByteIndex;
-    private final String filePath;
+    private int currentByteIndex;
+    private byte[] torrentBlob;
 
     ////////////////////////////////////////////////////////////////////////////
     //// CONSTRUCTORS //////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    public Reader(String filePath)
+    public Reader(File file) throws IOException
     {
-        this.filePath = filePath;
+        torrentBlob = IOUtils.toByteArray(new FileInputStream(file));
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -39,7 +40,7 @@ public class Reader
     public synchronized List<Object> read()
     {
         this.currentByteIndex = 0;
-        long fileSize = new File(filePath).length();
+        long fileSize = torrentBlob.length;
 
         List<Object> dataTypes = new ArrayList<Object>();
         while (currentByteIndex < fileSize)
@@ -58,7 +59,7 @@ public class Reader
     private Object readSingleType()
     {
         // Read in the byte at current position and dispatch over it.
-        byte current = Utils.readNthByteFromFile(filePath, currentByteIndex);
+        byte current = torrentBlob[currentByteIndex];
         switch (current)
         {
             case '0':
@@ -220,7 +221,7 @@ public class Reader
             throw new Error("Error parsing integer. Was expecting 'e' at end but got " + readCurrentByte());
 
         currentByteIndex++; // Skip past 'e'
-        return new BInt(Integer.parseInt(intString));
+        return new BInt(Long.parseLong(intString));
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -234,7 +235,7 @@ public class Reader
      */
     private byte readCurrentByte()
     {
-        return Utils.readNthByteFromFile(filePath, currentByteIndex);
+        return torrentBlob[currentByteIndex];
     }
 
     /**

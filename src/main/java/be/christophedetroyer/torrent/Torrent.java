@@ -7,6 +7,8 @@ import be.christophedetroyer.bencoding.types.BDictionary;
 import be.christophedetroyer.bencoding.types.BInt;
 import be.christophedetroyer.bencoding.types.BList;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -18,17 +20,19 @@ public class Torrent
 
     private final String announce;
     private final String name;
-    private final Integer pieceLength;
+    private final Long pieceLength;
     private final List<String> pieces;
     private final boolean singleFileTorrent;
-    private final Integer totalSize;
+    private final Long totalSize;
     private final List<TorrentFile> fileList;
     private final String comment;
     private final String createdBy;
     private final Date creationDate;
     private final List<String> announceList;
 
-    public Torrent(String announce, String name, Integer pieceLength, List<String> pieces, boolean singleFileTorrent, Integer totalSize, List<TorrentFile> fileList, String comment, String createdBy, Date creationDate, List<String> announceList)
+    public Torrent(String announce, String name, Long pieceLength, List<String> pieces, boolean singleFileTorrent,
+                   Long totalSize, List<TorrentFile> fileList, String comment, String createdBy, Date creationDate,
+                   List<String> announceList)
     {
 
         this.announce = announce;
@@ -76,7 +80,7 @@ public class Torrent
         return name;
     }
 
-    public Integer getPieceLength()
+    public Long getPieceLength()
     {
         return pieceLength;
     }
@@ -91,7 +95,7 @@ public class Torrent
         return singleFileTorrent;
     }
 
-    public int getTotalSize()
+    public Long getTotalSize()
     {
         return totalSize;
     }
@@ -124,9 +128,9 @@ public class Torrent
     ////////////////////////////////////////////////////////////////////////////
     //// PARSER FUNCTIONALITY //////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    public static Torrent parseTorrent(String filePath)
+    public static Torrent parseTorrent(String filePath) throws IOException
     {
-        Reader r = new Reader(filePath);
+        Reader r = new Reader(new File(filePath));
         List<Object> x = r.read();
         // A valid torrentfile should only return a single dictionary.
         if (x.size() != 1)
@@ -151,7 +155,7 @@ public class Torrent
             // Get the information out of the dictionary.
             BDictionary info = parseInfoDictionary(dictionary);
             String name = parseTorrentLocation(info);
-            Integer pieceLength = parsePieceLength(info);
+            Long pieceLength = parsePieceLength(info);
             List<String> pieces = parsePiecesHashes(info);
 
             // Optional values
@@ -160,13 +164,14 @@ public class Torrent
             String createdBy = parseCreatorName(dictionary);
             Date creationDate = parseCreationDate(dictionary);
             List<String> announceList = parseAnnounceList(dictionary);
-            Integer totalSize = parseSingleFileTotalSize(info);
+            Long totalSize = parseSingleFileTotalSize(info);
 
             // Single file or multi-file torrent.
             boolean singleFileTorrent;
             singleFileTorrent = null != info.find(new BByteString("length"));
 
-            return new Torrent(announce, name, pieceLength, pieces, singleFileTorrent, totalSize, fileList, comment, createdBy, creationDate, announceList);
+            return new Torrent(announce, name, pieceLength, pieces, singleFileTorrent, totalSize, fileList, comment,
+                               createdBy, creationDate, announceList);
         } else
         {
             throw new ParseException("Could not parse Object to BDictionary", 0);
@@ -177,7 +182,7 @@ public class Torrent
      * @param info info dictionary
      * @return length — size of the file in bytes (only when one file is being shared)
      */
-    private static Integer parseSingleFileTotalSize(BDictionary info)
+    private static Long parseSingleFileTotalSize(BDictionary info)
     {
         if (null != info.find(new BByteString("length")))
             return ((BInt) info.find(new BByteString("length"))).getValue();
@@ -236,7 +241,7 @@ public class Torrent
      * @param info infodictionary of torrent
      * @return piece length — number of bytes per piece. This is commonly 28 KiB = 256 KiB = 262,144 B.
      */
-    private static Integer parsePieceLength(BDictionary info)
+    private static Long parsePieceLength(BDictionary info)
     {
         if (null != info.find(new BByteString("piece length")))
             return ((BInt) info.find(new BByteString("piece length"))).getValue();
