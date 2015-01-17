@@ -66,7 +66,7 @@ public class BInt implements IBencodable
 
         BInt bInt = (BInt) o;
 
-        return value == bInt.value;
+        return value.equals(bInt.value);
     }
 
     @Override

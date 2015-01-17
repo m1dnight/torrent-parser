@@ -131,17 +131,17 @@ public class Reader
         byte[] bsData;
 
         // Build up a string of ascii chars representing the size.
-        char current = readCurrentChar();
+        byte current = readCurrentByte();
         while (current >= 48 && current <= 57)
         {
-            lengthAsString = lengthAsString + Character.toString(current);
+            lengthAsString = lengthAsString + Character.toString((char)current);
             currentByteIndex++;
-            current = readCurrentChar();
+            current = readCurrentByte();
         }
         lengthAsInt = Integer.parseInt(lengthAsString);
 
-        if (readCurrentChar() != ':')
-            throw new Error("Read length of bytestring and was expecting ':' but got " + readCurrentChar());
+        if (readCurrentByte() != ':')
+            throw new Error("Read length of byte string and was expecting ':' but got " + readCurrentByte());
         currentByteIndex++; // Skip over the ':'.
 
         // Read the actual data
@@ -169,8 +169,6 @@ public class Reader
      */
     private BDictionary readDictionary()
     {
-        int startIndex = currentByteIndex;
-        int endIndex;
         // If we got here, the current byte is an 'd'.
         if (readCurrentByte() != 'd')
             throw new Error("Error parsing dictionary. Was expecting a 'd' but got " + readCurrentByte());
@@ -181,17 +179,12 @@ public class Reader
         {
             // Each dictionary *must* map BByteStrings to any other value.
             BByteString key = (BByteString) readSingleType();
-            IBencodable value = (IBencodable) readSingleType();
+            IBencodable value = readSingleType();
+
             dict.add(key, value);
         }
-        endIndex = currentByteIndex;
         currentByteIndex++; // Skip the 'e'
 
-        //Store the blob for debugging.
-        int dictByteLength = endIndex - startIndex + 1;
-        byte[] blob = new byte[dictByteLength];
-        System.arraycopy(datablob, 0 + startIndex, blob, 0, dictByteLength);
-        dict.blob = blob;
         return dict;
     }
 
@@ -216,12 +209,12 @@ public class Reader
         // Read in the integer number by number.
         // They are represented as ASCII numbers.
         String intString = "";
-        char current = readCurrentChar();
+        byte current = readCurrentByte();
         while (current >= 48 && current <= 57)
         {
-            intString = intString + Character.toString(current);
+            intString = intString + Character.toString((char)current);
             currentByteIndex++;
-            current = readCurrentChar();
+            current = readCurrentByte();
         }
 
         if (readCurrentByte() != 'e')
@@ -244,16 +237,4 @@ public class Reader
     {
         return datablob[currentByteIndex];
     }
-
-    /**
-     * Same as readCurrentByte, but a char. For cleaner code.
-     *
-     * @return Current char in the byte array.
-     */
-    private char readCurrentChar()
-    {
-        return (char) readCurrentByte();
-    }
-
-
 }

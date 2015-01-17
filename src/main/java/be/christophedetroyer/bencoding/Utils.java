@@ -125,7 +125,7 @@ public class Utils
      */
     public static String SHAsum(byte[] input)
     {
-        MessageDigest md = null;
+        MessageDigest md;
         try
         {
             md = MessageDigest.getInstance("SHA-1");
