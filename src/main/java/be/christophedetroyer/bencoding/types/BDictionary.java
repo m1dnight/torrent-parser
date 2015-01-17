@@ -14,7 +14,7 @@ public class BDictionary implements IBencodable
 
     public BDictionary()
     {
-        this.dictionary = new Hashtable<BByteString, IBencodable>();
+        this.dictionary = new LinkedHashMap<BByteString, IBencodable>();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -30,6 +30,9 @@ public class BDictionary implements IBencodable
         return dictionary.get(key);
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    //// BENCODING /////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     public String bencodedString()
     {
         StringBuilder sb = new StringBuilder();

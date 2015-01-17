@@ -163,7 +163,15 @@ public class Torrent
             // Get the information out of the dictionary.
             BDictionary info = parseInfoDictionary(dictionary);
 
+            byte[] bencoded = info.bencode();
+            byte[] blob = info.blob;
             System.out.println(Utils.SHAsum(info.blob));
+            System.out.println(Utils.SHAsum(info.bencode()));
+            System.out.println(Arrays.equals(bencoded, blob));
+            Arrays.sort(bencoded);
+            Arrays.sort(blob);
+            System.out.println(Arrays.equals(bencoded, blob));
+
 
 
             String name = parseTorrentLocation(info);

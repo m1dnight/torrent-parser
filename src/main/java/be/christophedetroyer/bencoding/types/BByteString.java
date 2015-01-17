@@ -27,6 +27,10 @@ public class BByteString implements IBencodable
         return data;
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    //// BENCODING /////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+
     public String bencodedString()
     {
         return data.length + ":" + new String(data);
@@ -34,16 +38,16 @@ public class BByteString implements IBencodable
 
     public byte[] bencode()
     {
-        long length = data.length;
-        String lstring = Long.toString(length);
-        byte[] sizeBytes = lstring.getBytes();
 
-        byte[] bencoded = new byte[sizeBytes.length + 1 + data.length];
-        bencoded[sizeBytes.length] = ':';
-        System.arraycopy(sizeBytes, 0, bencoded, 0, sizeBytes.length);
+        byte[] lengthStringAsBytes = Utils.stringToAsciiBytes(Long.toString(data.length));
+        byte[] bencoded = new byte[lengthStringAsBytes.length + 1 + data.length];
 
+        bencoded[lengthStringAsBytes.length] = ':';
+        // Copy the length array in first.
+        System.arraycopy(lengthStringAsBytes, 0, bencoded, 0, lengthStringAsBytes.length);
+        // Copy in the actual data.
         for (int i = 0; i < data.length; i++)
-            bencoded[i + sizeBytes.length + 1] = data[i];
+            bencoded[i + lengthStringAsBytes.length + 1] = data[i];
 
         return bencoded;
     }
@@ -59,7 +63,7 @@ public class BByteString implements IBencodable
             return new String(this.data);
         } else
         {
-            return "<bytes:" + this.data.length + ">";
+            return "<non-ascii bytes:" + this.data.length + ">";
         }
     }
 

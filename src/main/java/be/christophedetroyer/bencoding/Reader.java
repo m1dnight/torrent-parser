@@ -10,14 +10,19 @@ import java.util.List;
 public class Reader
 {
     private int currentByteIndex;
-    private byte[] torrentBlob;
+    private byte[] datablob;
 
     ////////////////////////////////////////////////////////////////////////////
     //// CONSTRUCTORS //////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
     public Reader(File file) throws IOException
     {
-        torrentBlob = IOUtils.toByteArray(new FileInputStream(file));
+        datablob = IOUtils.toByteArray(new FileInputStream(file));
+    }
+
+    public Reader(String s)
+    {
+        datablob = s.getBytes();
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -34,7 +39,7 @@ public class Reader
     public synchronized List<IBencodable> read()
     {
         this.currentByteIndex = 0;
-        long fileSize = torrentBlob.length;
+        long fileSize = datablob.length;
 
         List<IBencodable> dataTypes = new ArrayList<IBencodable>();
         while (currentByteIndex < fileSize)
@@ -53,7 +58,7 @@ public class Reader
     private IBencodable readSingleType()
     {
         // Read in the byte at current position and dispatch over it.
-        byte current = torrentBlob[currentByteIndex];
+        byte current = datablob[currentByteIndex];
         switch (current)
         {
             case '0':
@@ -185,7 +190,7 @@ public class Reader
         //Store the blob for debugging.
         int dictByteLength = endIndex - startIndex + 1;
         byte[] blob = new byte[dictByteLength];
-        System.arraycopy(torrentBlob, 0 + startIndex, blob, 0, dictByteLength);
+        System.arraycopy(datablob, 0 + startIndex, blob, 0, dictByteLength);
         dict.blob = blob;
         return dict;
     }
@@ -237,7 +242,7 @@ public class Reader
      */
     private byte readCurrentByte()
     {
-        return torrentBlob[currentByteIndex];
+        return datablob[currentByteIndex];
     }
 
     /**

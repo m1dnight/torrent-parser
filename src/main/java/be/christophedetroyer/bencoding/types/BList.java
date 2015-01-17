@@ -14,6 +14,7 @@ public class BList implements IBencodable
     {
         this.list = new LinkedList<IBencodable>();
     }
+
     ////////////////////////////////////////////////////////////////////////////
     //// LOGIC METHODS /////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
@@ -27,6 +28,9 @@ public class BList implements IBencodable
         this.list.add(o);
     }
 
+    ////////////////////////////////////////////////////////////////////////////
+    //// BENCODING /////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     public String bencodedString()
     {
         StringBuilder sb = new StringBuilder();
@@ -47,15 +51,14 @@ public class BList implements IBencodable
         for (IBencodable entry : this.list)
         {
             byte[] elementBenc = entry.bencode();
-            for(byte b : elementBenc)
+            for (byte b : elementBenc)
                 bytes.add(b);
         }
         bytes.add((byte) 'e');
 
-
         byte[] bencoded = new byte[bytes.size()];
 
-        for(int i =0; i < bytes.size(); i++)
+        for (int i = 0; i < bytes.size(); i++)
             bencoded[i] = bytes.get(i);
         return bencoded;
     }
