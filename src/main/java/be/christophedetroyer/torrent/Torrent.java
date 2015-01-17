@@ -2,10 +2,7 @@ package be.christophedetroyer.torrent;
 
 import be.christophedetroyer.bencoding.Reader;
 import be.christophedetroyer.bencoding.Utils;
-import be.christophedetroyer.bencoding.types.BByteString;
-import be.christophedetroyer.bencoding.types.BDictionary;
-import be.christophedetroyer.bencoding.types.BInt;
-import be.christophedetroyer.bencoding.types.BList;
+import be.christophedetroyer.bencoding.types.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +18,7 @@ public class Torrent
     private final String announce;
     private final String name;
     private final Long pieceLength;
+    private final byte[] piecesBlob;
     private final List<String> pieces;
     private final boolean singleFileTorrent;
     private final Long totalSize;
@@ -30,7 +28,7 @@ public class Torrent
     private final Date creationDate;
     private final List<String> announceList;
 
-    public Torrent(String announce, String name, Long pieceLength, List<String> pieces, boolean singleFileTorrent,
+    public Torrent(String announce, String name, Long pieceLength, List<String> pieces, byte[] piecesBlob, boolean singleFileTorrent,
                    Long totalSize, List<TorrentFile> fileList, String comment, String createdBy, Date creationDate,
                    List<String> announceList)
     {
@@ -39,6 +37,7 @@ public class Torrent
         this.name = name;
         this.pieceLength = pieceLength;
         this.pieces = pieces;
+        this.piecesBlob = piecesBlob;
         this.singleFileTorrent = singleFileTorrent;
         this.totalSize = totalSize;
         this.fileList = fileList;
@@ -47,7 +46,16 @@ public class Torrent
         this.creationDate = creationDate;
         this.announceList = announceList;
     }
-
+    ////////////////////////////////////////////////////////////////////////////
+    //// LOGIC METHODS /////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    public String getInfoHash()
+    {
+        return "";
+    }
+    ////////////////////////////////////////////////////////////////////////////
+    //// OVERRIDDEN METHODS ////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     @Override
     public String toString()
     {
@@ -131,7 +139,7 @@ public class Torrent
     public static Torrent parseTorrent(String filePath) throws IOException
     {
         Reader r = new Reader(new File(filePath));
-        List<Object> x = r.read();
+        List<IBencodable> x = r.read();
         // A valid torrentfile should only return a single dictionary.
         if (x.size() != 1)
             throw new Error("Parsing .torrent yielded wrong number of bencoding structs.");
@@ -154,9 +162,14 @@ public class Torrent
             String announce = parseAnnounce(dictionary);
             // Get the information out of the dictionary.
             BDictionary info = parseInfoDictionary(dictionary);
+
+            System.out.println(Utils.SHAsum(info.blob));
+
+
             String name = parseTorrentLocation(info);
             Long pieceLength = parsePieceLength(info);
             List<String> pieces = parsePiecesHashes(info);
+            byte[] piecesBlob = parsePiecesBlob(info);
 
             // Optional values
             List<TorrentFile> fileList = parseFileList(info);
@@ -170,7 +183,7 @@ public class Torrent
             boolean singleFileTorrent;
             singleFileTorrent = null != info.find(new BByteString("length"));
 
-            return new Torrent(announce, name, pieceLength, pieces, singleFileTorrent, totalSize, fileList, comment,
+            return new Torrent(announce, name, pieceLength, pieces, piecesBlob, singleFileTorrent, totalSize, fileList, comment,
                                createdBy, creationDate, announceList);
         } else
         {
@@ -279,6 +292,21 @@ public class Torrent
      * @return pieces — a hash list, i.e., a concatenation of each piece's SHA-1 hash. As SHA-1 returns a 160-bit hash,
      * pieces will be a string whose length is a multiple of 160-bits.
      */
+    private static byte[] parsePiecesBlob(BDictionary info)
+    {
+        if (null != info.find(new BByteString("pieces")))
+        {
+            return ((BByteString) info.find(new BByteString("pieces"))).getData();
+        } else
+        {
+            throw new Error("Info dictionary does not contain pieces bytestring!");
+        }
+    }
+    /**
+     * @param info info dictionary of .torrent file.
+     * @return pieces — a hash list, i.e., a concatenation of each piece's SHA-1 hash. As SHA-1 returns a 160-bit hash,
+     * pieces will be a string whose length is a multiple of 160-bits.
+     */
     private static List<String> parsePiecesHashes(BDictionary info)
     {
         if (null != info.find(new BByteString("pieces")))
@@ -317,7 +345,7 @@ public class Torrent
             List<TorrentFile> fileList = new ArrayList<TorrentFile>();
             BList filesBList = (BList) info.find(new BByteString("files"));
 
-            Iterator<Object> fileBDicts = filesBList.getIterator();
+            Iterator<IBencodable> fileBDicts = filesBList.getIterator();
             while (fileBDicts.hasNext())
             {
                 Object fileObject = fileBDicts.next();
@@ -328,7 +356,7 @@ public class Torrent
                     BInt fileLength = (BInt) fileBDict.find(new BByteString("length"));
                     // Pick out each subdirectory as a string.
                     List<String> paths = new LinkedList<String>();
-                    Iterator<Object> filePathsIterator = filePaths.getIterator();
+                    Iterator<IBencodable> filePathsIterator = filePaths.getIterator();
                     while (filePathsIterator.hasNext())
                         paths.add(filePathsIterator.next().toString());
 
@@ -352,11 +380,11 @@ public class Torrent
             List<String> announceUrls = new LinkedList<String>();
 
             BList announceList = (BList) dictionary.find(new BByteString("announce-list"));
-            Iterator<Object> subLists = announceList.getIterator();
+            Iterator<IBencodable> subLists = announceList.getIterator();
             while (subLists.hasNext())
             {
                 BList subList = (BList) subLists.next();
-                Iterator<Object> elements = subList.getIterator();
+                Iterator<IBencodable> elements = subList.getIterator();
                 while (elements.hasNext())
                 {
                     // Assume that each element is a BByteString

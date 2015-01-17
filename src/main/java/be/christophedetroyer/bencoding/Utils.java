@@ -4,6 +4,9 @@ import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Formatter;
 
 /**
  * Created by christophe on 15.01.15.
@@ -111,4 +114,25 @@ public class Utils
         return true;
     }
 
+    public static String SHAsum(byte[] convertme)
+    {
+        MessageDigest md = null;
+        try
+        {
+            md = MessageDigest.getInstance("SHA-1");
+            return byteArray2Hex(md.digest(convertme));
+        } catch (NoSuchAlgorithmException e)
+        {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static String byteArray2Hex(final byte[] hash) {
+        Formatter formatter = new Formatter();
+        for (byte b : hash) {
+            formatter.format("%02x", b);
+        }
+        return formatter.toString();
+    }
 }

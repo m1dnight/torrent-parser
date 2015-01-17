@@ -1,31 +1,63 @@
 package be.christophedetroyer.bencoding.types;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by christophe on 15.01.15.
  */
-public class BList
+public class BList implements IBencodable
 {
-    private final List<Object> list;
+    public byte[] blob;
+    private final List<IBencodable> list;
 
     public BList()
     {
-        this.list = new LinkedList<Object>();
+        this.list = new LinkedList<IBencodable>();
     }
     ////////////////////////////////////////////////////////////////////////////
     //// LOGIC METHODS /////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
-    public Iterator<Object> getIterator()
+    public Iterator<IBencodable> getIterator()
     {
         return list.iterator();
     }
 
-    public void add(Object o)
+    public void add(IBencodable o)
     {
         this.list.add(o);
+    }
+
+    public String bencodedString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("l");
+        for (IBencodable entry : this.list)
+        {
+            sb.append(entry.bencodedString());
+        }
+        sb.append("e");
+        return sb.toString();
+    }
+
+    public byte[] bencode()
+    {
+        // Get the total size of the keys and values.
+        ArrayList<Byte> bytes = new ArrayList<Byte>();
+        bytes.add((byte) 'l');
+        for (IBencodable entry : this.list)
+        {
+            byte[] elementBenc = entry.bencode();
+            for(byte b : elementBenc)
+                bytes.add(b);
+        }
+        bytes.add((byte) 'e');
+
+
+        byte[] bencoded = new byte[bytes.size()];
+
+        for(int i =0; i < bytes.size(); i++)
+            bencoded[i] = bytes.get(i);
+        return bencoded;
     }
     ////////////////////////////////////////////////////////////////////////////
     //// OVERRIDDEN METHODS ////////////////////////////////////////////////////

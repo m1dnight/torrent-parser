@@ -1,18 +1,12 @@
 package be.christophedetroyer.bencoding;
 
-import be.christophedetroyer.bencoding.types.BByteString;
-import be.christophedetroyer.bencoding.types.BDictionary;
-import be.christophedetroyer.bencoding.types.BInt;
-import be.christophedetroyer.bencoding.types.BList;
+import be.christophedetroyer.bencoding.types.*;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by christophe on 15.01.15.
- */
 public class Reader
 {
     private int currentByteIndex;
@@ -37,12 +31,12 @@ public class Reader
      *
      * @return List<Object> containing all the parsed bencoded objects.
      */
-    public synchronized List<Object> read()
+    public synchronized List<IBencodable> read()
     {
         this.currentByteIndex = 0;
         long fileSize = torrentBlob.length;
 
-        List<Object> dataTypes = new ArrayList<Object>();
+        List<IBencodable> dataTypes = new ArrayList<IBencodable>();
         while (currentByteIndex < fileSize)
             dataTypes.add(readSingleType());
 
@@ -56,7 +50,7 @@ public class Reader
      * @return Returns an Object that represents either BByteString,
      * BDictionary, BInt or BList.
      */
-    private Object readSingleType()
+    private IBencodable readSingleType()
     {
         // Read in the byte at current position and dispatch over it.
         byte current = torrentBlob[currentByteIndex];
@@ -170,7 +164,9 @@ public class Reader
      */
     private BDictionary readDictionary()
     {
-        // If we got here, the current byte is an 'i'.
+        int startIndex = currentByteIndex;
+        int endIndex;
+        // If we got here, the current byte is an 'd'.
         if (readCurrentByte() != 'd')
             throw new Error("Error parsing dictionary. Was expecting a 'd' but got " + readCurrentByte());
         currentByteIndex++; // Skip over the 'd'
@@ -180,11 +176,17 @@ public class Reader
         {
             // Each dictionary *must* map BByteStrings to any other value.
             BByteString key = (BByteString) readSingleType();
-            Object value = readSingleType();
+            IBencodable value = (IBencodable) readSingleType();
             dict.add(key, value);
         }
+        endIndex = currentByteIndex;
         currentByteIndex++; // Skip the 'e'
 
+        //Store the blob for debugging.
+        int dictByteLength = endIndex - startIndex + 1;
+        byte[] blob = new byte[dictByteLength];
+        System.arraycopy(torrentBlob, 0 + startIndex, blob, 0, dictByteLength);
+        dict.blob = blob;
         return dict;
     }
 
