@@ -14,12 +14,14 @@ public class BDictionary implements IBencodable
 
     public BDictionary()
     {
+        // LinkedHashMap to preserve order.
         this.dictionary = new LinkedHashMap<BByteString, IBencodable>();
     }
 
     ////////////////////////////////////////////////////////////////////////////
     //// LOGIC METHODS /////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+
     public void add(BByteString key, IBencodable value)
     {
         this.dictionary.put(key, value);
@@ -54,11 +56,11 @@ public class BDictionary implements IBencodable
 
         for (Map.Entry<BByteString, IBencodable> entry : this.dictionary.entrySet())
         {
-            byte[] keyBenc = entry.getKey().bencode();
-            byte[] valBEnc = entry.getValue().bencode();
-            for (byte b : keyBenc)
+            byte[] keyBencoded = entry.getKey().bencode();
+            byte[] valBencoded = entry.getValue().bencode();
+            for (byte b : keyBencoded)
                 bytes.add(b);
-            for (byte b : valBEnc)
+            for (byte b : valBencoded)
                 bytes.add(b);
         }
         bytes.add((byte) 'e');
@@ -66,6 +68,7 @@ public class BDictionary implements IBencodable
 
         for (int i = 0; i < bytes.size(); i++)
             bencoded[i] = bytes.get(i);
+
         return bencoded;
     }
 

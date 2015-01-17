@@ -1,5 +1,7 @@
 package be.christophedetroyer.bencoding.types;
 
+import be.christophedetroyer.bencoding.Utils;
+
 import java.util.ArrayList;
 
 /**
@@ -18,6 +20,7 @@ public class BInt implements IBencodable
     ////////////////////////////////////////////////////////////////////////////
     //// BENCODING /////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////
+
     public String bencodedString()
     {
         return "i" + value + "e";
@@ -25,18 +28,22 @@ public class BInt implements IBencodable
 
     public byte[] bencode()
     {
-        String lstring = Long.toString(value);
-        byte[] sizeBytes = lstring.getBytes();
+        byte[] sizeInAsciiBytes = Utils.stringToAsciiBytes(value.toString());
 
         ArrayList<Byte> bytes = new ArrayList<Byte>();
+
         bytes.add((byte) 'i');
-        for (byte sizeByte : sizeBytes)
+
+        for (byte sizeByte : sizeInAsciiBytes)
             bytes.add(sizeByte);
+
         bytes.add((byte) 'e');
 
         byte[] bencoded = new byte[bytes.size()];
+
         for (int i = 0; i < bytes.size(); i++)
             bencoded[i] = bytes.get(i);
+
         return bencoded;
     }
     ////////////////////////////////////////////////////////////////////////////
