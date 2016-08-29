@@ -198,7 +198,7 @@ public class TorrentParser
                 int hashCount = piecesBlob.length / 20;
                 for (int currHash = 0; currHash < hashCount; currHash++)
                 {
-                    byte[] currHashByteBlob = Arrays.copyOfRange(piecesBlob, 20 * currHash, (20 * (currHash + 1)) - 1);
+                    byte[] currHashByteBlob = Arrays.copyOfRange(piecesBlob, 20 * currHash, (20 * (currHash + 1)));
                     String sha1 = Utils.bytesToHex(currHashByteBlob);
                     sha1HexRenders.add(sha1);
                 }
