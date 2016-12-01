@@ -19,6 +19,9 @@ public class Utils
     /**
      * Takes an array of bytes and converts them to a string of
      * hexadecimal characters.
+     * Credit for this function goes to the author of this[1] StackOverflow
+     * question.
+     * [1] https://stackoverflow.com/a/9855338
      *
      * @param bytes byte array
      * @return String
