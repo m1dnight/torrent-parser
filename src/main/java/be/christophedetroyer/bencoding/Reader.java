@@ -210,8 +210,7 @@ public class Reader
         // They are represented as ASCII numbers.
         String intString = "";
         byte current = readCurrentByte();
-        //45 negative mark
-        while (current >= 48 && current <= 57 || current == 45)
+        while (current >= 48 && current <= 57)
         {
             intString = intString + Character.toString((char)current);
             currentByteIndex++;
