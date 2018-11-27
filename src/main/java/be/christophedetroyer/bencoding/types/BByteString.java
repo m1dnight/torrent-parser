@@ -2,6 +2,7 @@ package be.christophedetroyer.bencoding.types;
 
 import be.christophedetroyer.bencoding.Utils;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 public class BByteString implements IBencodable
@@ -58,13 +59,7 @@ public class BByteString implements IBencodable
     @Override
     public String toString()
     {
-        if (Utils.allAscii(data))
-        {
-            return new String(this.data);
-        } else
-        {
-            return "<non-ascii bytes:" + this.data.length + ">";
-        }
+        return new String(data, Charset.forName("UTF-8"));
     }
 
     @Override

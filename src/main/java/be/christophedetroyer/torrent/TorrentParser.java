@@ -2,21 +2,42 @@ package be.christophedetroyer.torrent;
 
 import be.christophedetroyer.bencoding.Reader;
 import be.christophedetroyer.bencoding.Utils;
-import be.christophedetroyer.bencoding.types.*;
+import be.christophedetroyer.bencoding.types.BByteString;
+import be.christophedetroyer.bencoding.types.BDictionary;
+import be.christophedetroyer.bencoding.types.BInt;
+import be.christophedetroyer.bencoding.types.BList;
+import be.christophedetroyer.bencoding.types.IBencodable;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by christophe on 17.01.15.
  */
 public class TorrentParser
 {
+    public static Torrent parseTorrent(InputStream input) throws IOException
+    {
+        Reader r = new Reader(input);
+        return parseTorrent(r);
+    }
+
     public static Torrent parseTorrent(String filePath) throws IOException
     {
         Reader r = new Reader(new File(filePath));
+        return parseTorrent(r);
+    }
+
+    public static Torrent parseTorrent(Reader r) throws IOException
+    {
         List<IBencodable> x = r.read();
         // A valid torrentfile should only return a single dictionary.
         if (x.size() != 1)

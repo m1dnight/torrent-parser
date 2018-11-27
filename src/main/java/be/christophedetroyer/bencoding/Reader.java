@@ -20,6 +20,11 @@ public class Reader
         datablob = IOUtils.toByteArray(new FileInputStream(file));
     }
 
+    public Reader(InputStream input) throws IOException
+    {
+        datablob = IOUtils.toByteArray(input);
+    }
+
     public Reader(String s)
     {
         datablob = s.getBytes();
